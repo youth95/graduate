@@ -23,7 +23,7 @@ import utils.evaluate_function as ef
 import matplotlib.pyplot as plt
 
 start = time.time()
-data = pd.read_csv('../dataset/72_predicted_72_supervised_data.csv')
+data = pd.read_csv('../data/72_predicted_72_supervised_data.csv')
 
 lr = 1e-3
 epoches = 100
@@ -82,6 +82,8 @@ def evaulate(model, test_dataloader):
 
 
 pred, real = evaulate(model, test_dataloader)
+pred = pred.cpu()
+real = real.cpu()
 pred_lat = np.array(pred[:, :, 0:1]).reshape(-1)
 pred_lon = np.array(pred[:, :, 1:]).reshape(-1)
 real_lat = np.array(real[:, :, 0:1]).reshape(-1)
