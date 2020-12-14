@@ -155,8 +155,9 @@ def find(year, save_dir="/srv/datasets/tmp_sat"):
                 img = normalization(img)
                 item["grid_content"] = img
                 met_sat_file_full_path = "{}/{}.nc".format(met_sat_base_path, t.strftime("%Y%m"))
-                idx = t.day * 8 + t.hour / 3
-                img2 = read_met_sat(met_sat_file_full_path, int(idx))
+                idx = int((t.day - 1) * 8 + t.hour / 3)
+                print("idx day:{} hour:{} idx:{}".format(t.day, t.hour, idx))
+                img2 = read_met_sat(met_sat_file_full_path, idx)
                 item["met_content"] = img2
                 item["label_content"] = lon_lat_to_graph(item["lat"], item["lon"], 256, 256)
                 # min_lat_diff = 0.6
