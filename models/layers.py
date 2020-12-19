@@ -15,7 +15,7 @@ class ChannelAttention(nn.Module):
     通道注意力层
     """
 
-    def __init__(self, in_planes, ratio=16):
+    def __init__(self, in_planes, ratio=1):
         super(ChannelAttention, self).__init__()
         self.avg_pool = nn.AdaptiveAvgPool2d(1)
         self.max_pool = nn.AdaptiveMaxPool2d(1)
@@ -172,23 +172,36 @@ class ModelDriver(torch.nn.Module):
     def __init__(self):
         super(ModelDriver, self).__init__()
         self.sa = SpatialAttention()
-        self.ca = ChannelAttention(64)
+        self.ca = ChannelAttention(4)
+        self.seq2seq = Seq2Seq()
         self.cnn = CNN()
 
     def forward(self, x):
+        batch, src_seq_len, ch, width, height = x.shape
+        x = x.view(-1, ch, width, height)
+        _l, ch, width, height = x.shape
+        x = x[:, :4, :, :]  # 气象通道
+        _x = x[:, 3:, :, :]  # 遥感通道
+        # 过 CNN
         x = self.cnn(x)
-        x = x.permute(1, 0, 2, 3)
+        # 过 注意力
         x = x * self.ca(x)
         x = x * self.sa(x)
-        x = x.permute(1, 0, 2, 3)
+        rx = []
+        for i in range(_l):
+            rx.append(torch.cat([x[i], _x[i]]))
+        x = torch.cat(rx)
+        x = x.view(batch, src_seq_len, ch, width, height)
+        # 过 Seq2Seq
+        x = self.seq2seq(x)
         return x
 
 
 class Seq2Seq(torch.nn.Module):
     def __init__(self):
         super(Seq2Seq, self).__init__()
-        self.encoder = Encoder(convlstm_encoder_params[0], convlstm_encoder_params[1]).cuda()
-        self.decoder = Decoder(convlstm_decoder_params[0], convlstm_decoder_params[1]).cuda()
+        self.encoder = Encoder(convlstm_encoder_params[0], convlstm_encoder_params[1]).to(device)
+        self.decoder = Decoder(convlstm_decoder_params[0], convlstm_decoder_params[1]).to(device)
 
     def forward(self, inp):
         state = self.encoder(inp)
@@ -197,11 +210,10 @@ class Seq2Seq(torch.nn.Module):
 
 
 if __name__ == "__main__":
-    model = CNN()
-    x = torch.randn((64, 4, 256, 256))
+    model = ModelDriver().to(device)
+
+    # (batch,src_seq_len,ch,width,height)
+    x = torch.randn((1, 16, 5, 256, 256)).to(device)
     y = model(x)
-    print(y.shape)
-    model = Seq2Seq()
-    x = torch.randn((1, 16, 4, 256, 256)).to(device)
-    y = model(x)
+    print(x.shape)
     print(y.shape)

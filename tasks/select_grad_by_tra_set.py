@@ -20,7 +20,11 @@ def normalization(x):
     归一化到区间{0,1]
     返回副本
     """
-    _range = torch.max(x) - torch.min(x)
+    x = x.squeeze()
+    t = torch.isnan(x)
+    _max = x.max()
+    _min = x.min()
+    _range = _max - _min
     return (x - torch.min(x)) / _range
 
 
@@ -76,23 +80,26 @@ def read_met_sat(full_path, idx, size=256):
         sst = nc_obj.variables["sst"][:]
         sst = sst[idx:idx + 1, :, :]
         sst = resize(sst.reshape((261, 321)), size)
-        sst = normalization(sst)
+        # sst = normalization(sst)
 
         sp = nc_obj.variables["sp"][:]
         sp = sp[idx:idx + 1, :, :]
         sp = resize(sp.reshape((261, 321)), size)
-        sp = normalization(sp)
+        # sp = normalization(sp)
 
         u10 = nc_obj.variables["u10"][:]
         u10 = u10[idx:idx + 1, :, :]
         u10 = resize(u10.reshape((261, 321)), size)
-        u10 = normalization(u10)
+        # u10 = normalization(u10)
 
         v10 = nc_obj.variables["v10"][:]
         v10 = v10[idx:idx + 1, :, :]
         v10 = resize(v10.reshape((261, 321)), size)
-        v10 = normalization(v10)
-        return torch.tensor(np.vstack([sst, sp, u10, v10]))
+        # v10 = normalization(v10)
+        data = torch.tensor(np.vstack([sst, sp, u10, v10]))
+        # data = torch.tensor(np.nan_to_num(data))
+        # data = normalization(data)
+    return data
 
 
 def crop(
