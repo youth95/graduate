@@ -7,6 +7,16 @@ import numpy as np
 base_path = "/srv/datasets/tmp_sat/{}"
 
 
+class MockDataSet(Dataset):
+    def __getitem__(self, index):
+        x = torch.randn((16, 5, 256, 256))
+        y = torch.randn((8, 1, 256, 256))
+        return x, y
+
+    def __len__(self):
+        return 100
+
+
 class TFDataSet(Dataset):
 
     def __init__(self, items, in_step, out_step):

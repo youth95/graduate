@@ -1,7 +1,7 @@
 from torch import nn
 from env.base import *
 from models.layers import Seq2Seq
-from data_loaders.tmp_sat import fetch_data_set
+from data_loaders.tmp_sat import fetch_data_set, MockDataSet
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
@@ -11,7 +11,8 @@ weight_decays = 1e-3
 batch_sizes = 1
 
 criterion = nn.MSELoss()
-data_set = fetch_data_set([2010])
+# data_set = fetch_data_set([2010])
+data_set = MockDataSet()
 train_dataloader = DataLoader(dataset=data_set, batch_size=batch_sizes, shuffle=True)
 model = Seq2Seq().to(device)
 
