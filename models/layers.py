@@ -6,6 +6,7 @@ from env.base import device
 import torch
 from models.utils import make_layers
 from models.net_params import convlstm_encoder_params, convlstm_decoder_params
+import pandas as pd
 
 out_step = 8
 
@@ -89,6 +90,8 @@ class CNN(torch.nn.Module):
         )
 
     def forward(self, x):
+        test = x.min()
+        test = x.max()
         x = self.conv1(x)
         x = self.conv2(x)
         x = self.conv3(x)
@@ -180,7 +183,9 @@ class ModelDriver(torch.nn.Module):
         batch, src_seq_len, ch, width, height = x.shape
         x = x.view(-1, ch, width, height)
         _l, ch, width, height = x.shape
-        x = x[:, :4, :, :]  # 气象通道
+        # x = torch.tensor(x[:, :4, :, :]).to(device)  # 气象通道
+        # _x = torch.tensor(x[:, 3:, :, :]).to(device)  # 遥感通道
+        x = x[:, :4, :, :]
         _x = x[:, 3:, :, :]  # 遥感通道
         # 过 CNN
         x = self.cnn(x)
@@ -210,10 +215,16 @@ class Seq2Seq(torch.nn.Module):
 
 
 if __name__ == "__main__":
-    model = ModelDriver().to(device)
+    # model = ModelDriver().to(device)
+    #
+    # # (batch,src_seq_len,ch,width,height)
+    # x = torch.randn((1, 16, 5, 256, 256)).to(device)
+    # y = model(x)
+    # print(x.shape)
+    # print(y.shape)
 
-    # (batch,src_seq_len,ch,width,height)
-    x = torch.randn((1, 16, 5, 256, 256)).to(device)
+    model = CNN().to(device)
+    x = torch.randn((16, 4, 256, 256)).to(device)
     y = model(x)
     print(x.shape)
     print(y.shape)

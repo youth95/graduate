@@ -3,8 +3,8 @@ import os
 from torch.utils.data import Dataset, ConcatDataset
 import torch
 import numpy as np
+from env.base import data_root
 
-base_path = "/srv/datasets/tmp_sat/{}"
 
 
 class MockDataSet(Dataset):
@@ -49,7 +49,7 @@ class TFDataSet(Dataset):
 
 def fetch_mapper(year):
     mapper = {}
-    root_path = base_path.format(year)
+    root_path = data_root.format(year)
     file_list = os.listdir(root_path)
     for file in file_list:
         item = read(os.path.join(root_path, file))

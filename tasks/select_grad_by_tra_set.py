@@ -8,6 +8,12 @@ import torch
 from PIL import Image
 import numpy as np
 from scipy.ndimage import gaussian_filter
+from sklearn import preprocessing
+import warnings
+
+warnings.filterwarnings('ignore')
+
+min_max_scaler = preprocessing.MinMaxScaler()
 
 min_lat_diff = 0.6
 max_lat_diff = 62.1
@@ -75,30 +81,32 @@ def read_irwin_cdr_image(full_path):
     return img
 
 
+def fill_nan(label, value):
+    nan_count = pd.DataFrame(value.reshape((256, 256))).isna().sum().sum()
+    if nan_count != 0:
+        print("张量:{} 发现{} 个 nan !!!!!! 已替换".format(label, nan_count))
+        value[np.isnan(value)] = 0
+
+
 def read_met_sat(full_path, idx, size=256):
     with netCDF4.Dataset(full_path) as nc_obj:
-        sst = nc_obj.variables["sst"][:]
-        sst = sst[idx:idx + 1, :, :]
-        sst = resize(sst.reshape((261, 321)), size)
-        # sst = normalization(sst)
+        def hand_item(label):
+            value = nc_obj.variables[label][:]
+            value = value[idx:idx + 1, :, :]
+            value = resize(value.reshape((261, 321)), size)
+            value = min_max_scaler.fit_transform(value.reshape(size, size)).reshape((1, size, size))
+            fill_nan(label, value)
+            fill_nan(label, value)
+            return value
 
-        sp = nc_obj.variables["sp"][:]
-        sp = sp[idx:idx + 1, :, :]
-        sp = resize(sp.reshape((261, 321)), size)
-        # sp = normalization(sp)
-
-        u10 = nc_obj.variables["u10"][:]
-        u10 = u10[idx:idx + 1, :, :]
-        u10 = resize(u10.reshape((261, 321)), size)
-        # u10 = normalization(u10)
-
-        v10 = nc_obj.variables["v10"][:]
-        v10 = v10[idx:idx + 1, :, :]
-        v10 = resize(v10.reshape((261, 321)), size)
-        # v10 = normalization(v10)
+        sst = hand_item("sst")
+        sp = hand_item("sp")
+        u10 = hand_item("u10")
+        v10 = hand_item("v10")
         data = torch.tensor(np.vstack([sst, sp, u10, v10]))
         # data = torch.tensor(np.nan_to_num(data))
         # data = normalization(data)
+        # data = min_max_scaler.fit_transform(data)
     return data
 
 
