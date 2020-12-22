@@ -1,107 +1,57 @@
 '''
-画R2
+得到 测试集的经纬度进行评估
 '''
-
-import warnings
-import os, sys
-
-warnings.filterwarnings('ignore')
-from models.Seq2Seq_att import DataSet_seq, Seq2Seq
-from tqdm import tqdm
-import pandas as pd
-import torch.nn as nn
-from sklearn.model_selection import train_test_split
-from torch.utils.data import DataLoader
 import torch
-import numpy as np
-import math
-import time
-
-os.chdir(os.path.dirname(__file__))
-sys.path.append("..")
-import utils.evaluate_function as ef
 import matplotlib.pyplot as plt
+import numpy as np
 
-start = time.time()
-data = pd.read_csv('../data/72_predicted_72_supervised_data.csv')
+width = 256
+height = 256
 
-lr = 1e-3
-epoches = 100
-criterion = nn.MSELoss()
-weight_decays = 1e-3
-batch_sizes = 32
-data_new = data.iloc[:, 1:]
-data_train, data_test = train_test_split(data_new, test_size=0.2, shuffle=True)
-test_data = DataSet_seq(data_test, 24)
-
-test_dataloader = DataLoader(dataset=test_data, batch_size=batch_sizes, shuffle=False)
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-model = torch.load('../model_files/72_72_Seq2Seq_att_model.pkl')
-print(model)
-
-seq_length = 24
-n_features = 6
-label_length = 24
+max_lon_diff = 179.96099999999998
+min_lon_diff = 100.0
+max_lat_diff = 62.1
+min_lat_diff = 0.6
 
 
-def unnormal(data):
-    '''
-    :param data: 归一化后的数据
-    :return: 反归一化
-    LAT_MAX = 179.96099999999998 LAT_MIN = 100.0
-    LON_MAX = 62.1 LON_MAX = 0.6
-    '''
-    LAT_MAX = 179.96099999999998
-    LAT_MIN = 100.0
-    LON_MAX = 62.1
-    LON_MIN = 0.6
-    data[:, :, 0:1] = data[:, :, 0:1] * (LAT_MAX - LAT_MIN) + LAT_MIN
-    data[:, :, 1:] = data[:, :, 1:] * (LON_MAX - LON_MIN) + LON_MIN
-    return data
+# 密度图转经纬度
+def graph_to_lon_lat(graphs):
+    """
+    标签图转经纬度
+    :param graphs: shape n,width,height
+    :return:
+    """
+    graphs = graphs.reshape((-1, 256, 256))
+    result = []
+    for g in graphs:
+        x, y = find(g)
+        lat = x * (max_lat_diff - min_lat_diff) / width + min_lat_diff
+        lon = y * (max_lon_diff - min_lon_diff) / height + min_lon_diff
+        result.append([lat, lon])
+    return torch.tensor(result)
 
 
-def evaulate(model, test_dataloader):
-    with torch.no_grad():
-        a = 0
-        for i, data in enumerate(test_dataloader):
-            x, y = data
-            x = x.to(device).view(-1, seq_length, n_features)
-            y = y.to(device).view(-1, label_length, 2)
-            # print(x.shape)
-            # print(y.shape)
-            output_test = model(x)
-            # print('测试集输出 output_test',output_test)
-            # rnn测试不需要,但是seq2seq需要
-            output_test = output_test.permute(1, 0, 2)
-            unnormal(output_test)
-            unnormal(y)
-            a += 1
-            if a ==6:
-                return output_test, y
+def find(g):
+    for i in range(width):
+        for j in range(height):
+            if g[i][j] == 1.0:
+                return i, j
 
 
-pred, real = evaulate(model, test_dataloader)
-pred = pred.cpu()
-real = real.cpu()
-pred_lat = np.array(pred[:, :, 0:1]).reshape(-1)
-pred_lon = np.array(pred[:, :, 1:]).reshape(-1)
-real_lat = np.array(real[:, :, 0:1]).reshape(-1)
-real_lon = np.array(real[:, :, 1:]).reshape(-1)
+# 画图loss曲线
 
-print(pred_lat)
-print(real_lat)
-# x = np.arange(100,170)
-x = np.arange(0,64)
-y = x
-# plt.ylabel('Prediction latitude value')
-# plt.xlabel('Observsed latitude value')
-plt.ylabel('prediction longitude value')
-plt.xlabel('Observsed longitude value')
+def loss_show(train_loss, epoches):
+    x_epoch = np.arange(1, epoches + 1)
+    plt.figure()
+    plt.plot(x_epoch, train_loss, label='train_loss')
+    # plt.plot(x_epoch, test_loss, label='test_loss')
+    plt.xlabel('Epoches')
+    plt.ylabel('Loss')
+    plt.legend()
+    plt.show()
 
-plt.plot(x,y)
-plt.scatter(pred_lon, real_lon, s=10, marker='*',label = 'R2= 0.745 ')
 
-# plt.scatter(pred_lat, real_lat, s=10, marker='*',label = 'R2= 0.81 ')
-plt.legend()
-plt.show()
+if __name__ == '__main__':
+    train_loss = [1.186429774882842, 0.5543725194067372, 0.6299182590173216, 0.3456049783497441, 2.178115226632478, 0.3775045528095596, 0.2447358249705665, 0.186103738464263, 1.3886954728133825, 0.17646966410838827, 0.1269166451327655, 0.098505044698107, 0.08007112453330537, 1.5774849853953536, 0.8772972642767186, 0.5822623978768077, 0.43217608621534037, 0.34326877292929864, 0.28188676584740074, 0.23556756258619074, 0.199016377938037, 0.1699778975880876, 0.14615384048345137, 0.12608996467018613, 0.10877062346102023, 0.11476819901442041, 0.17420849496764795, 0.13010683822996763, 0.20152872302854546, 0.17742419434825377, 0.3052409230446329, 0.334824714087406, 0.38533320027042406, 0.3805975203915518, 0.4323152373449839, 0.41956542953088577, 0.4262174611949191, 0.4527232498500724, 0.389051984748518, 0.4105304210275716, 0.38055617096168654, 0.44916517679028367, 0.3423444412040467, 0.3904229329556835, 0.36855522151656295, 0.3389298241129335, 0.38246023092342885, 0.33925553160358446, 0.3386697027908296, 0.33544500126522414, 0.31509765480854074, 0.3404026148574693, 0.3110061375690358, 0.31536220253578257, 0.3088489097866173, 0.2902986084928318, 0.28630271687039305, 0.22081984976800728, 0.2604370962220187, 0.26413514704576563, 0.2570716161661002, 0.24961899574465898, 0.24644531720146842, 0.2369569168255037, 0.22621626019173738, 0.14337462738004267, 0.11104241503896761, 0.0902140494055894]
+
+    loss_show(train_loss,68)

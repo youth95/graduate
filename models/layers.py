@@ -84,7 +84,7 @@ class CNN(torch.nn.Module):
             torch.nn.ReLU()
         )
         self.conv4 = torch.nn.Sequential(
-            torch.nn.Conv2d(32, 4, 1, 1, 0),
+            torch.nn.Conv2d(32, 4, 3, 1, 1),
             torch.nn.BatchNorm2d(4),
             torch.nn.ReLU()
         )
