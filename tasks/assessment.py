@@ -48,7 +48,8 @@ def loss_show(train_loss, epoches):
     plt.xlabel('Epoches')
     plt.ylabel('Loss')
     plt.legend()
-    plt.show()
+    plt.savefig('loss.png')
+    # plt.show()
 
 
 if __name__ == '__main__':
