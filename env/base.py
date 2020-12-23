@@ -8,6 +8,5 @@ print("device is:", device)
 
 # 学校服务器的数据地址
 data_root = '/mnt/data1/ppdata/tmp_sat/{}'
-# data_root = "/home/ibdi_public/dpp/data/tmp_sat/{}"
 # 家里服务器的数据地址
 # data_root = "/srv/datasets/tmp_sat/{}"

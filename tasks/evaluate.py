@@ -26,7 +26,8 @@ train_data, test_data = torch.utils.data.random_split(data_set, [train_size, tes
 test_dataloader = DataLoader(dataset=test_data, batch_size=batch_sizes, shuffle=False)
 
 model = ModelDriver().todevice()
-model = torch.load('../model_file/48_24_MAR_ConvLSTM.pkl')
+
+# model = torch.load('../model_file/48_24_MAR_ConvLSTM.pkl')
 
 # 评估
 test_set = tqdm(test_dataloader, leave=False, total=len(test_dataloader))
