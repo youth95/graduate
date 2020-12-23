@@ -7,9 +7,11 @@ from sklearn.metrics import mean_squared_error
 from sklearn.metrics import mean_absolute_error
 from sklearn.metrics import r2_score
 from torch.utils.data import Dataset
+
+
 class DataSet(Dataset):
 
-    def __init__(self, data_pd,step):
+    def __init__(self, data_pd, step):
         data = np.array(data_pd)
         self.x_data = torch.from_numpy(data[:, 0:step * 6]).type(torch.float32)
         self.y_data = torch.from_numpy(data[:, step * 6:]).type(torch.float32)
@@ -26,8 +28,11 @@ n_features = 6
 seq_length = 24
 label_length = 24
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+
 def to_radians(x, *y):
     return math.radians(x)
+
 
 def distance(pred, real):
     '''
@@ -36,14 +41,14 @@ def distance(pred, real):
     :return: (n,1)
     '''
     R = 6357
-    latPred = pred[:,:, 0:1].squeeze(-1)
-    latPred.map_(latPred,to_radians)
-    lonPred = pred[:,: ,1:].squeeze(-1).cpu()
-    lonPred.map_(lonPred,to_radians)
-    latReal = real[:,:, 0:1].squeeze(-1).cpu()
-    latReal.map_(latPred,to_radians)
-    lonReal = real[:,:, 1:].squeeze(-1).cpu()
-    lonReal.map_(lonReal,to_radians)
+    latPred = pred[:, :, 0:1].squeeze(-1)
+    latPred.map_(latPred, to_radians)
+    lonPred = pred[:, :, 1:].squeeze(-1).cpu()
+    lonPred.map_(lonPred, to_radians)
+    latReal = real[:, :, 0:1].squeeze(-1).cpu()
+    latReal.map_(latPred, to_radians)
+    lonReal = real[:, :, 1:].squeeze(-1).cpu()
+    lonReal.map_(lonReal, to_radians)
 
     E1 = 2 * R * torch.asin(
         torch.sqrt(
@@ -95,7 +100,7 @@ def mae_mse_rmse(target, prediction):
     prediction = unnormal(prediction)
     # print('反归一化后的target',target[0:1,])
     # print('反归一化后的目标prediction',prediction[0:1,])
-    E1 = distance(target,prediction)
+    E1 = distance(target, prediction)
 
     lat_real = np.array(target[:, :, 0:1].squeeze(-1))
     lon_real = np.array(target[:, :, 1:].squeeze(-1))
@@ -110,7 +115,8 @@ def mae_mse_rmse(target, prediction):
     lat_r2 = r2_score(lat_pred, lat_real)
     lon_r2 = r2_score(lon_pred, lon_real)
     rmse = mse ** 0.5
-    return mae, mse, rmse, lat_r2, lon_r2,E1
+    return mae, mse, rmse, lat_r2, lon_r2, E1
+
 
 def evaulate(model, test_dataloader, loss_func):
     model.eval()
@@ -134,7 +140,7 @@ def evaulate(model, test_dataloader, loss_func):
             output_test = output_test.permute(1, 0, 2)
             with torch.no_grad():
                 loss = loss_func(output_test, y)
-                mae, mse, rmse, R2_lat, R2_lon,E1 = mae_mse_rmse(output_test, y)
+                mae, mse, rmse, R2_lat, R2_lon, E1 = mae_mse_rmse(output_test, y)
                 total_count += 1
                 total_loss += loss.item()
                 total_mae += mae

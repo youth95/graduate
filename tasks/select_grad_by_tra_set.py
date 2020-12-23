@@ -136,6 +136,7 @@ def resize(img, size=64):
 
 
 def find(year, save_dir="/srv/datasets/tmp_sat"):
+    print("fetch", year)
     df = pd.read_csv('../data/tra_sat.csv', usecols=["ISO_TIME", "LAT", "LON", "SID"])
     base_path = "/srv/datasets/grid_sat/%d" % year
     met_sat_base_path = "/srv/datasets/met_sat/%d" % year
@@ -187,4 +188,4 @@ def find(year, save_dir="/srv/datasets/tmp_sat"):
 
 
 if __name__ == "__main__":
-    find(2010)
+    find(2011)
