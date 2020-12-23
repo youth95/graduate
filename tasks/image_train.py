@@ -1,3 +1,6 @@
+import os,sys
+os.chdir(os.path.dirname(__file__))
+sys.path.append("..")
 from torch import nn
 from env.base import *
 from models.layers import ModelDriver
@@ -9,7 +12,7 @@ import assessment
 lr = 1e-3
 epoches = 100
 weight_decays = 1e-3
-batch_sizes = 2
+batch_sizes =2
 
 criterion = nn.MSELoss(size_average=False)
 
@@ -61,4 +64,4 @@ if __name__ == "__main__":
         print('总共loss：',total_loss / count)
 
     assessment.loss_show(train_loss, epoches)
-    torch.save('../model_files/48_24_MAR_ConvLSTM.pkl')
+    torch.save(model,'48_24_MAR_ConvLSTM.pkl')
