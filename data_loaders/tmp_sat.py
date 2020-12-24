@@ -41,7 +41,7 @@ class TFDataSet(Dataset):
         x = torch.tensor(np.vstack(x))
         y = [np.array(item["label_content"]).reshape((1, 1, 256, 256)) for item in y]
         y = torch.tensor(np.vstack(y))
-        return x, y
+        return x.clone(), y.clone()
 
     def __len__(self):
         return len(self.data)

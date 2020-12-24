@@ -10,7 +10,7 @@ import os
 
 # tensorboard --logdir ./runs/main/logs
 torch.cuda.set_device(3)
-from tasks.utils import create_workspace
+from tasks.utils import create_workspace, ssim
 from torch import nn
 from env.base import *
 from models.layers import ModelDriver
@@ -23,7 +23,7 @@ import random
 import tasks.assessment as assessment
 
 # 创建工作环境 建议每次跑之前都新建一个工作环境
-task_name, workspace, log_dir, model_files_dir = create_workspace("main_1")
+task_name, workspace, log_dir, model_files_dir = create_workspace("main_2")
 
 image_save_head = 2
 
@@ -38,7 +38,7 @@ epoches = 1000
 weight_decays = 1e-3
 batch_sizes = 2
 
-criterion = nn.MSELoss()
+criterion = ssim
 
 data_set = fetch_data_set([2010])
 # data_set, _ = torch.utils.data.random_split(data_set, [2, len(data_set) - 2])  # 测试
@@ -78,6 +78,7 @@ if __name__ == "__main__":
             y = y.to(device)
             optimizer.zero_grad()
             output = model(x)
+            output, y = output.reshape(-1, 256, 256), y.reshape(-1, 256, 256)
             loss = criterion(output, y)
             loss_aver = loss.item()
             train_set.set_postfix({
@@ -99,6 +100,7 @@ if __name__ == "__main__":
             x = x.to(device).type(torch.float32)
             y = y.to(device)
             output = model(x)
+            output, y = output.reshape(-1, 256, 256), y.reshape(-1, 256, 256)
             loss = criterion(output, y)
             loss_aver = loss.item()
             test_set.set_postfix({
