@@ -24,7 +24,7 @@ import random
 import tasks.assessment as assessment
 
 # 创建工作环境 建议每次跑之前都新建一个工作环境
-task_name, workspace, log_dir, model_files_dir = create_workspace("main_9")
+task_name, workspace, log_dir, model_files_dir = create_workspace("main_10")
 
 image_save_head = 20
 
@@ -39,8 +39,8 @@ epoches = 1000
 weight_decays = 1e-3
 batch_sizes = 2
 
-# criterion = ssim
-criterion = nn.MSELoss().to(device)
+criterion = ssim
+# criterion = nn.MSELoss().to(device)
 
 data_set = fetch_data_set([2010])
 # data_set, _ = torch.utils.data.random_split(data_set, [2, len(data_set) - 2])  # 测试
@@ -64,7 +64,7 @@ def init_weights(m):
 optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decays)
 early_stopping = EarlyStopping(patience=20, verbose=True)
 
-DEBUG = True
+DEBUG = False
 if __name__ == "__main__":
     train_loss, test_loss = [], []
     for epoch in range(epoches):

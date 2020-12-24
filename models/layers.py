@@ -188,18 +188,18 @@ class ModelDriver(torch.nn.Module):
         _label = x[:, 5:, :, :]  # 密度通道
         x = x[:, :4, :, :]
         # 过 CNN
-        x = self.cnn(x)
+        # x = self.cnn(x)
         # print('CNN:{}'.format(x))
         # 过 注意力
-        x = x * self.ca(x)
-        x = x * self.sa(x)
+        # x = x * self.ca(x)
+        # x = x * self.sa(x)
         # print('注意力机制：{},shape:{}'.format(x, x.shape))
         rx = []
         for i in range(_l):
-            _content = torch.mul(_x[i], _label[i] + 1)
-            rx.append(torch.cat([x[i], _content]))
+            _content = torch.mul(_x[i], _label[i] + 1).type(torch.float64)
+            rx.append(_content)
         x = torch.cat(rx)
-        x = x.view(batch, src_seq_len, ch - 1, width, height)
+        x = x.view(batch, src_seq_len, 1, width, height)
         # 过 Seq2Seq
         x = self.seq2seq(x)
         # print('最终的x：{}'.format(x))
