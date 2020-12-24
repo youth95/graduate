@@ -11,12 +11,17 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 import tasks.assessment as assessment
 
+# 选GPU
+import os
+
+os.environ["CUDA_VISIBLE_DEVICES"] = "4"
+
 lr = 1e-3
 epoches = 100
 weight_decays = 1e-3
 batch_sizes = 2
 
-criterion = nn.MSELoss(size_average=False)
+criterion = nn.MSELoss()
 
 data_set = fetch_data_set([2010])
 all_length = len(data_set)
@@ -25,14 +30,16 @@ test_size = all_length - train_size
 train_data, test_data = torch.utils.data.random_split(data_set, [train_size, test_size])
 test_dataloader = DataLoader(dataset=test_data, batch_size=batch_sizes, shuffle=False)
 
-model = ModelDriver().todevice()
+model = ModelDriver().to(device)
 
-# model = torch.load('../model_file/48_24_MAR_ConvLSTM.pkl')
+checkpoint = torch.load('../runs/main_1/model_files/checkpoint_22_0.000000.pth.tar')
+# checkpoint = torch.load('filename.pth.tar')
+model.load_state_dict(checkpoint['state_dict'])
 
 # 评估
 test_set = tqdm(test_dataloader, leave=False, total=len(test_dataloader))
 
-model.eval()
+# model.eval()
 total_test_loss = 0
 test_count = 0
 mae, rmse, mse, E1, lat_r2, lon_r2 = 0, 0, 0, 0, 0, 0

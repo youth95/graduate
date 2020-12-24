@@ -1,10 +1,13 @@
 import os, sys
 from tensorboardX import SummaryWriter
 import torchvision
-
+import torch
 os.chdir(os.path.dirname(__file__))
 sys.path.append("..")
-
+# 选GPU
+import os
+# tensorboard --logdir ./runs/main/logs
+torch.cuda.set_device(3)
 from tasks.utils import create_workspace
 from torch import nn
 from env.base import *
@@ -18,18 +21,18 @@ import random
 import tasks.assessment as assessment
 
 # 创建工作环境 建议每次跑之前都新建一个工作环境
-task_name, workspace, log_dir, model_files_dir = create_workspace("main")
+task_name, workspace, log_dir, model_files_dir = create_workspace("main_1")
 
 print("tensorboard --logdir ./runs/{}/logs".format(task_name))
 
 tb = SummaryWriter(
     log_dir=log_dir
 )
-
+print('训练')
 lr = 1e-3
 epoches = 1000
 weight_decays = 1e-3
-batch_sizes = 1
+batch_sizes = 2
 
 criterion = nn.MSELoss()
 
@@ -85,8 +88,8 @@ if __name__ == "__main__":
         # 评估
         test_set = tqdm(test_dataloader, leave=False, total=len(test_dataloader))
         model.eval()
-        pred_imgs = []
-        real_imgs = []
+        # pred_imgs = []
+        # real_imgs = []
         for batch_idx, data in enumerate(test_set):
             test_count += 1
             x, y = data
@@ -100,27 +103,27 @@ if __name__ == "__main__":
                 'epoch': '{:02d}'.format(epoch)
             })
             total_test_loss += loss_aver
-            pred_imgs.append(output)
-            real_imgs.append(y)
+        #     pred_imgs.append(output)
+        #     real_imgs.append(y)
         avg_test_loss = total_test_loss / test_count
         test_loss.append(avg_test_loss)
         print('Epoch：{},训练集loss:{},测试集loss:{}'.format(epoch, avg_train_loss, avg_test_loss))
-        real = torch.cat(real_imgs).view(-1, 1, 256, 256)
-        pred = torch.cat(pred_imgs).view(-1, 1, 256, 256)
+        # real = torch.cat(real_imgs).view(-1, 1, 256, 256)
+        # pred = torch.cat(pred_imgs).view(-1, 1, 256, 256)
         model_dict = {
             'epoch': epoch,
             'state_dict': model.state_dict(),
             'optimizer': optimizer.state_dict()
         }
-        order = np.random.choice(range(len(real)))
-        sampler = torch.utils.data.sampler.SubsetRandomSampler(indices=order)
-        real = random.sample(real, 64)
-        pred = random.sample(pred, 64)
-        tb.add_image("Real_imgs", torchvision.utils.make_grid(real, normalize=True, nrow=8, ), epoch)
-        tb.add_image("Pred_imgs", torchvision.utils.make_grid(pred, normalize=True, nrow=8, ), epoch)
+        # order = np.random.choice(range(len(real)))
+        # sampler = torch.utils.data.sampler.SubsetRandomSampler(indices=order)
+        # real = random.sample(real, 64)
+        # pred = random.sample(pred, 64)
+        # tb.add_image("Real_imgs", torchvision.utils.make_grid(real, normalize=True, nrow=8, ), epoch)
+        # tb.add_image("Pred_imgs", torchvision.utils.make_grid(pred, normalize=True, nrow=8, ), epoch)
         early_stopping(avg_test_loss, model_dict, epoch, model_files_dir, model)
         if early_stopping.early_stop:
             print("Early stopping")
             break
-    # assessment.loss_show(train_loss, test_loss, epoches)
+    assessment.loss_show(train_loss, test_loss, epoches)
     # torch.save(model, '48_24_MAR_ConvLSTM.pkl')

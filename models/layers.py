@@ -73,18 +73,18 @@ class CNN(torch.nn.Module):
             torch.nn.BatchNorm2d(8),
             torch.nn.ReLU()
         )
-        self.conv2 = torch.nn.Sequential(
-            torch.nn.Conv2d(8, 16, 3, 1, 1),
-            torch.nn.BatchNorm2d(16),
-            torch.nn.ReLU()
-        )
-        self.conv3 = torch.nn.Sequential(
-            torch.nn.Conv2d(16, 32, 3, 1, 1),
-            torch.nn.BatchNorm2d(32),
-            torch.nn.ReLU()
-        )
+        # self.conv2 = torch.nn.Sequential(
+        #     torch.nn.Conv2d(8, 16, 3, 1, 1),
+        #     torch.nn.BatchNorm2d(16),
+        #     torch.nn.ReLU()
+        # )
+        # self.conv3 = torch.nn.Sequential(
+        #     torch.nn.Conv2d(16, 32, 3, 1, 1),
+        #     torch.nn.BatchNorm2d(32),
+        #     torch.nn.ReLU()
+        # )
         self.conv4 = torch.nn.Sequential(
-            torch.nn.Conv2d(32, 4, 3, 1, 1),
+            torch.nn.Conv2d(8, 4, 3, 1, 1),
             torch.nn.BatchNorm2d(4),
             torch.nn.ReLU()
         )
@@ -93,8 +93,8 @@ class CNN(torch.nn.Module):
         test = x.min()
         test = x.max()
         x = self.conv1(x)
-        x = self.conv2(x)
-        x = self.conv3(x)
+        # x = self.conv2(x)
+        # x = self.conv3(x)
         x = self.conv4(x)
 
         return x
@@ -189,9 +189,11 @@ class ModelDriver(torch.nn.Module):
         _x = x[:, 3:, :, :]  # 遥感通道
         # 过 CNN
         x = self.cnn(x)
+        # print('CNN:{}'.format(x))
         # 过 注意力
         x = x * self.ca(x)
         x = x * self.sa(x)
+        # print('注意力机制：{},shape:{}'.format(x, x.shape))
         rx = []
         for i in range(_l):
             rx.append(torch.cat([x[i], _x[i]]))
@@ -199,6 +201,7 @@ class ModelDriver(torch.nn.Module):
         x = x.view(batch, src_seq_len, ch, width, height)
         # 过 Seq2Seq
         x = self.seq2seq(x)
+        # print('最终的x：{}'.format(x))
         return x
 
 
