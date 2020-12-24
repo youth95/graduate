@@ -9,6 +9,7 @@ from models.net_params import convlstm_encoder_params, convlstm_decoder_params
 import pandas as pd
 
 out_step = 8
+torch.set_default_dtype(torch.float64)
 
 
 class ChannelAttention(nn.Module):
@@ -90,8 +91,6 @@ class CNN(torch.nn.Module):
         )
 
     def forward(self, x):
-        test = x.min()
-        test = x.max()
         x = self.conv1(x)
         # x = self.conv2(x)
         # x = self.conv3(x)
@@ -181,12 +180,13 @@ class ModelDriver(torch.nn.Module):
 
     def forward(self, x):
         batch, src_seq_len, ch, width, height = x.shape
-        x = x.view(-1, ch, width, height)
+        x = x.clone().view(-1, ch, width, height)
         _l, ch, width, height = x.shape
         # x = torch.tensor(x[:, :4, :, :]).to(device)  # 气象通道
         # _x = torch.tensor(x[:, 3:, :, :]).to(device)  # 遥感通道
+        _x = x[:, 4:5, :, :]  # 遥感通道
+        _label = x[:, 5:, :, :]  # 密度通道
         x = x[:, :4, :, :]
-        _x = x[:, 3:, :, :]  # 遥感通道
         # 过 CNN
         x = self.cnn(x)
         # print('CNN:{}'.format(x))
@@ -196,9 +196,10 @@ class ModelDriver(torch.nn.Module):
         # print('注意力机制：{},shape:{}'.format(x, x.shape))
         rx = []
         for i in range(_l):
-            rx.append(torch.cat([x[i], _x[i]]))
+            _content = torch.mul(_x[i], _label[i] + 1)
+            rx.append(torch.cat([x[i], _content]))
         x = torch.cat(rx)
-        x = x.view(batch, src_seq_len, ch, width, height)
+        x = x.view(batch, src_seq_len, ch - 1, width, height)
         # 过 Seq2Seq
         x = self.seq2seq(x)
         # print('最终的x：{}'.format(x))
@@ -227,7 +228,7 @@ if __name__ == "__main__":
     # print(y.shape)
 
     model = CNN().to(device)
-    x = torch.randn((16, 4, 256, 256)).to(device)
+    x = torch.randn((16, 4, 256, 256), dtype=torch.float64).to(device)
     y = model(x)
     print(x.shape)
     print(y.shape)

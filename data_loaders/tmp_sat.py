@@ -6,7 +6,6 @@ import numpy as np
 from env.base import data_root
 
 
-
 class MockDataSet(Dataset):
     def __getitem__(self, index):
         x = torch.randn((16, 5, 256, 256))
@@ -35,11 +34,12 @@ class TFDataSet(Dataset):
         x = [
             np.vstack(
                 [np.array(item['met_content']).reshape((4, 256, 256)),
-                 np.array(item['grid_content']).reshape((1, 256, 256))
+                 np.array(item['grid_content']).reshape((1, 256, 256)),
+                 np.array(item['label_content'], dtype=np.float64).reshape((1, 256, 256)),
                  ]
-            ).reshape((1, 5, 256, 256)) for item in x]
+            ).reshape((1, 6, 256, 256)) for item in x]
         x = torch.tensor(np.vstack(x))
-        y = [np.array(item["label_content"]).reshape((1, 1, 256, 256)) for item in y]
+        y = [np.array(item["label_content"], dtype=np.float64).reshape((1, 1, 256, 256)) for item in y]
         y = torch.tensor(np.vstack(y))
         return x.clone(), y.clone()
 

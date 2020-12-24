@@ -13,10 +13,14 @@ import torch
 import torch.nn as nn
 from env.base import device
 
+torch.set_default_dtype(torch.float64)
+
+
 class CGRU_cell(nn.Module):
     """
     ConvGRU Cell
     """
+
     def __init__(self, shape, input_channels, filter_size, num_features):
         super(CGRU_cell, self).__init__()
         self.shape = shape
@@ -71,6 +75,7 @@ class CGRU_cell(nn.Module):
 class CLSTM_cell(nn.Module):
     """ConvLSTMCell
     """
+
     def __init__(self, shape, input_channels, filter_size, num_features):
         super(CLSTM_cell, self).__init__()
         self.shape = shape  # H, W
@@ -98,7 +103,7 @@ class CLSTM_cell(nn.Module):
         for index in range(seq_len):
             if inputs is None:
                 x = torch.zeros(hx.size(0), self.input_channels, self.shape[0],
-                                self.shape[1]).to(device)
+                                self.shape[1], dtype=torch.float64).to(device)
             else:
                 x = inputs[index, ...]
 

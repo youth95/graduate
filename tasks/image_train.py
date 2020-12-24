@@ -3,6 +3,7 @@ from tensorboardX import SummaryWriter
 import torchvision
 import torch
 
+torch.set_default_dtype(torch.float64)
 os.chdir(os.path.dirname(__file__))
 sys.path.append("..")
 # 选GPU
@@ -23,9 +24,9 @@ import random
 import tasks.assessment as assessment
 
 # 创建工作环境 建议每次跑之前都新建一个工作环境
-task_name, workspace, log_dir, model_files_dir = create_workspace("main_2")
+task_name, workspace, log_dir, model_files_dir = create_workspace("main_9")
 
-image_save_head = 2
+image_save_head = 20
 
 print("tensorboard --logdir ./runs/{}/logs".format(task_name))
 
@@ -38,7 +39,8 @@ epoches = 1000
 weight_decays = 1e-3
 batch_sizes = 2
 
-criterion = ssim
+# criterion = ssim
+criterion = nn.MSELoss().to(device)
 
 data_set = fetch_data_set([2010])
 # data_set, _ = torch.utils.data.random_split(data_set, [2, len(data_set) - 2])  # 测试
@@ -62,6 +64,7 @@ def init_weights(m):
 optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decays)
 early_stopping = EarlyStopping(patience=20, verbose=True)
 
+DEBUG = True
 if __name__ == "__main__":
     train_loss, test_loss = [], []
     for epoch in range(epoches):
@@ -74,11 +77,31 @@ if __name__ == "__main__":
         for batch_idx, data in enumerate(train_set):
             train_count += 1
             x, y = data
-            x = x.to(device).type(torch.float32)
+            x = x.to(device)
+            input_images = x.reshape(-1, 1, 256, 256)
+            if batch_idx == 1 and DEBUG:
+                tb.add_image("input_imgs",
+                             torchvision.utils.make_grid(input_images,
+                                                         normalize=True, nrow=12, ),
+                             epoch * len(train_set) + batch_idx)
+                tb.add_image("input_label_imgs",
+                             torchvision.utils.make_grid(x[:, :, 5:, :, :].reshape(-1, 1, 256, 256),
+                                                         normalize=True, nrow=8, ),
+                             epoch * len(train_set) + batch_idx)
+                tb.add_image("input_遥感_imgs",
+                             torchvision.utils.make_grid(x[:, :, 4:5, :, :].reshape(-1, 1, 256, 256),
+                                                         normalize=True, nrow=8, ),
+                             epoch * len(train_set) + batch_idx)
+                tb.add_image("input_遥感*label_imgs",
+                             torchvision.utils.make_grid(
+                                 torch.mul(x[:, :, 5:, :, :] + 1, x[:, :, 4:5, :, :]).reshape(-1, 1, 256, 256),
+                                 normalize=True, nrow=8, ),
+                             epoch * len(train_set) + batch_idx)
             y = y.to(device)
             optimizer.zero_grad()
             output = model(x)
             output, y = output.reshape(-1, 256, 256), y.reshape(-1, 256, 256)
+
             loss = criterion(output, y)
             loss_aver = loss.item()
             train_set.set_postfix({
@@ -89,6 +112,7 @@ if __name__ == "__main__":
             optimizer.step()
             total_train_loss += loss_aver
         avg_train_loss = total_train_loss / train_count
+        tb.add_scalar('TrainLoss', total_train_loss, epoch)
         train_loss.append(avg_train_loss)
         # 评估
         test_set = tqdm(test_dataloader, leave=False, total=len(test_dataloader))
@@ -109,8 +133,8 @@ if __name__ == "__main__":
             })
             total_test_loss += loss_aver
             if i < image_save_head:
-                real = output.reshape(-1, 1, 256, 256)
-                pred = y.reshape(-1, 1, 256, 256)
+                pred = output.reshape(-1, 1, 256, 256)
+                real = y.reshape(-1, 1, 256, 256)
                 tb.add_image("Real_imgs", torchvision.utils.make_grid(real, normalize=True, nrow=8, ),
                              epoch * len(test_set) + batch_idx)
                 tb.add_image("Pred_imgs", torchvision.utils.make_grid(pred, normalize=True, nrow=8, ),
@@ -118,6 +142,7 @@ if __name__ == "__main__":
                 i += 1
 
         avg_test_loss = total_test_loss / test_count
+        tb.add_scalar('TestLoss', total_test_loss, epoch)
         test_loss.append(avg_test_loss)
         print('Epoch：{},训练集loss:{},测试集loss:{}'.format(epoch, avg_train_loss, avg_test_loss))
 
@@ -131,7 +156,7 @@ if __name__ == "__main__":
         # real = random.sample(real, 64)
         # pred = random.sample(pred, 64)
 
-        early_stopping(avg_test_loss, model_dict, epoch, model_files_dir, model)
+        early_stopping(total_test_loss, model_dict, epoch, model_files_dir, model)
         if early_stopping.early_stop:
             print("Early stopping")
             break
