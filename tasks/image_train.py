@@ -10,7 +10,7 @@ sys.path.append("..")
 import os
 
 # tensorboard --logdir ./runs/main/logs
-torch.cuda.set_device(3)
+# torch.cuda.set_device(3)
 from tasks.utils import create_workspace, ssim
 from torch import nn
 from env.base import *
@@ -37,7 +37,7 @@ print('训练')
 lr = 1e-3
 epoches = 1000
 weight_decays = 1e-3
-batch_sizes = 2
+batch_sizes = 6
 
 # criterion = ssim
 criterion = nn.MSELoss().to(device)
@@ -52,7 +52,11 @@ train_data, test_data = torch.utils.data.random_split(data_set, [train_size, tes
 train_dataloader = DataLoader(dataset=train_data, batch_size=batch_sizes, shuffle=True)
 test_dataloader = DataLoader(dataset=test_data, batch_size=batch_sizes, shuffle=True)
 
-model = ModelDriver().to(device)
+# nn.DataParallel
+model = nn.DataParallel(ModelDriver()).to(device)
+
+
+# model = ModelDriver().to(device)
 
 
 def init_weights(m):
