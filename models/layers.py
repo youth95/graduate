@@ -196,7 +196,7 @@ class ModelDriver(torch.nn.Module):
         # print('注意力机制：{},shape:{}'.format(x, x.shape))
         rx = []
         for i in range(_l):
-            _content = torch.mul(_x[i], _label[i] + 1)
+            _content = torch.mul(_x[i], _label[i])
             rx.append(torch.cat([x[i], _content]))
         x = torch.cat(rx)
         x = x.view(batch, src_seq_len, ch - 1, width, height)
